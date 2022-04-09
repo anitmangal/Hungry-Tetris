@@ -2,17 +2,19 @@ class pieceClass:
     #init
     def __init__(self, pieceName):
         import random
+        import TetrisPieces as TP
         self.pieceArray = [[]]
         self.pieceName = pieceName
         self.orientation = 0
         self.maxorientation = 1
-        if self.pieceName == "T" : self.maxorientation = 3
-        if self.pieceName == "Step" : self.maxorientation = 1
-        if self.pieceName == "StepR" : self.maxorientation = 1
-        if self.pieceName == "L" : self.maxorientation = 3
-        if self.pieceName == "J" : self.maxorientation = 3
-        if self.pieceName == "I" : self.maxorientation = 1
-        if self.pieceName == "Box" : self.maxorientation = 0
+        self.img = TP.boximg
+        if self.pieceName == "T" : self.maxorientation = 3; self.img = TP.boxblueimg
+        if self.pieceName == "Step" : self.maxorientation = 1; self.img = TP.boxyellowimg
+        if self.pieceName == "StepR" : self.maxorientation = 1; self.img = TP.boxdarkgreenimg
+        if self.pieceName == "L" : self.maxorientation = 3; self.img = TP.boxorangeimg
+        if self.pieceName == "J" : self.maxorientation = 3; self.img = TP.boxpinkimg
+        if self.pieceName == "I" : self.maxorientation = 1; self.img = TP.boxredimg
+        if self.pieceName == "Box" : self.maxorientation = 0; self.img = TP.boxgreenimg
         self.orientation = random.randint(0, self.maxorientation)
         self.checkOrient()
 
@@ -139,7 +141,7 @@ class pieceClass:
         for y in range(len(self.pieceArray)) :
             for x in range(len(self.pieceArray[0])) :
                 if self.pieceArray[y][x] :
-                    TP.screen.blit(TP.boximg, (TP.playerX + x*TP.boxSide, TP.playerY + y*TP.boxSide))
+                    TP.screen.blit(self.img, (TP.playerX + x*TP.boxSide, TP.playerY + y*TP.boxSide))
 
 
     #Change orientation and check if rotation is feasible
