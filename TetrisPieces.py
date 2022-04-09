@@ -26,7 +26,7 @@ gameY = 700
 bgColor = (0, 191, 255)
 boxSide = 25
 screen = pygame.display.set_mode((screenX, screenY))
-pygame.display.set_caption("Tetris")
+pygame.display.set_caption("Hungry Tetris")
 iconurl = resource_path(r'Assets\icon.png')
 icon = pygame.image.load(iconurl)
 pygame.display.set_icon(icon)
@@ -49,7 +49,7 @@ slomoTime = 20000
 breaklinesSwitch = False
 breaklinesCount = 0
 lastRandomPieceScore = 0
-lastAbilityScore = 0
+lastAbilityScore = 0     
 
 #Load Images
 boximgurl = resource_path(r'Assets\box.png')
@@ -92,6 +92,16 @@ mainframe4 = pygame.image.load(resource_path(r'Assets\MainScreen\4.png'))
 mainframe5 = pygame.image.load(resource_path(r'Assets\MainScreen\5.png'))
 mainframe6 = pygame.image.load(resource_path(r'Assets\MainScreen\6.png'))
 
+#Loading Audio
+music = pygame.mixer.music.load(resource_path(r'Assets\Sounds\Tetris_Theme.wav'))
+gameoversfx = pygame.mixer.Sound(resource_path(r'Assets\Sounds\GameOver.wav'))
+linebreaksfx = pygame.mixer.Sound(resource_path(r'Assets\Sounds\LineBreak.wav'))
+abilityunlocksfx = pygame.mixer.Sound(resource_path(r'Assets\Sounds\AbilityUnlock.wav'))
+randomBlockssfx = pygame.mixer.Sound(resource_path(r'Assets\Sounds\RandomBlocks.wav'))
+abilityusesfx = pygame.mixer.Sound(resource_path(r'Assets\Sounds\AbilityUse.wav'))
+freezesfx = pygame.mixer.Sound(resource_path(r'Assets\Sounds\freeze.wav'))
+footstepsfx = pygame.mixer.Sound(resource_path(r'Assets\Sounds\footsteps.wav'))
+footstepsrevsfx = pygame.mixer.Sound(resource_path(r'Assets\Sounds\footsteps.wav'))
 
 colorArray = [placedred, placedorange, placedyellow, placedgreen, placedblue]
 
@@ -109,6 +119,8 @@ def gameOver():
     screen.blit(finalScore, ((screenX-finalScore.get_size()[0]) / 2, 400))
     EscapeToExit = font.render("Press <escape> to Exit", True, (255,255,255))
     screen.blit(EscapeToExit, ((screenX - EscapeToExit.get_size()[0])/2, 450))
+    EnterToRestart = font.render("Press <enter> to Restart", True, (255,255,255))
+    screen.blit(EnterToRestart, ((screenX - EnterToRestart.get_size()[0])/2, 500))
     pygame.display.update()
 
 
@@ -161,169 +173,202 @@ def whatsNext() :
         for x in range(len(nextPiece.pieceArray[0])) :
             if nextPiece.pieceArray[y][x] :
                 screen.blit(nextPiece.img, (gameX + 9.5*boxSide + (x-len(nextPiece.pieceArray[0])/2)*boxSide,  gameY + (y-1.25-(len(nextPiece.pieceArray)/2))*boxSide))
-                
 
-i = 1
-
-while mainScreen:
-    screen.blit(logoimg, ((screenX-logoimg.get_size()[0])/2, 5*boxSide))
-    if i == 1 : screen.blit(mainframe1, (0,0))
-    if i == 2 : screen.blit(mainframe2, (0,0))
-    if i == 3 : screen.blit(mainframe3, (0,0))
-    if i == 4 : screen.blit(mainframe4, (0,0))
-    if i == 5 : screen.blit(mainframe5, (0,0))
-    if i == 6 : 
-        screen.blit(mainframe6, (0,0))
-        i = 0
-    i += 1
-    pygame.time.wait(250)
-    pygame.display.update()
-    font = pygame.font.Font(fonturl, 30)
-    enterText = font.render("<press any key to continue>", True, (255,255,255))
-    screen.blit(enterText, ((screenX - enterText.get_size()[0])/2, 20*boxSide))
-    pygame.time.wait(250)
-    pygame.display.update()
-    for event in pygame.event.get() :
-        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE) :
-            mainScreen = False
-            run = False
-            pygame.quit()
-            sys.exit()
-            break
-        if event.type == pygame.KEYDOWN :
-            mainScreen = False
-            break
-
-#Game Loop
-while run:
-
-    #DEFAULTS
-    tickdelay = Abilities_and_Aesthetics.getTick()
-    if tickdelay < 100 : tickdelay = 100
-    playerXchange = 0
-    playerYchange = boxSide
-    screen.fill(bgColor)
-    if playerState == "PLACED" :
-        piece = nextPiece
-        nextPiece = Pieces.pieceClass(piecesArray[random.randint(0, len(piecesArray)-1)])
-        playerX = gameX/2
-        playerY = 0
-        playerState = "FALLING"
-    screen.blit(gamebgimg, (0,0))
-    screen.blit(pygame.transform.scale(logoimg, (8*boxSide,8*boxSide*300/524)), (gameX+5*boxSide, 3*boxSide))
-    pauseSwitch = False
+while (True) :
+    #Initialize
+    playerState = "PLACED"
+    gameover = False
+    mainScreen = True
+    run = True
+    score = 0        
+    playerX = gameX/2
+    playerY = 0
+    defaultTick = 200
+    switchCount = 0
+    ghostSwitch = False
+    ghostCount = 0
+    ghostTime = 20000
+    slomoSwitch = False
+    slomoCount = 0
+    slomoTime = 20000
     breaklinesSwitch = False
+    breaklinesCount = 0
+    lastRandomPieceScore = 0
+    lastAbilityScore = 0                
+    mainArray = [[False for x in range(int(gameX/boxSide))] for y in range(int(gameY/boxSide))]
 
+    i = 1
+    pygame.mixer.music.play(-1)
+    while mainScreen:
+        screen.blit(logoimg, ((screenX-logoimg.get_size()[0])/2, 5*boxSide))
+        if i == 1 : screen.blit(mainframe1, (0,0))
+        if i == 2 : screen.blit(mainframe2, (0,0))
+        if i == 3 : screen.blit(mainframe3, (0,0))
+        if i == 4 : screen.blit(mainframe4, (0,0))
+        if i == 5 : screen.blit(mainframe5, (0,0))
+        if i == 6 : 
+            screen.blit(mainframe6, (0,0))
+            i = 0
+        i += 1
+        pygame.time.wait(250)
+        pygame.display.update()
+        font = pygame.font.Font(fonturl, 30)
+        enterText = font.render("<press any key to continue>", True, (255,255,255))
+        screen.blit(enterText, ((screenX - enterText.get_size()[0])/2, 20*boxSide))
+        pygame.time.wait(250)
+        pygame.display.update()
+        for event in pygame.event.get() :
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE) :
+                mainScreen = False
+                run = False
+                pygame.quit()
+                sys.exit()
+                break
+            if event.type == pygame.KEYDOWN :
+                mainScreen = False
+                break
 
-    #INPUTS
-    for event in pygame.event.get() :
-        if event.type == pygame.QUIT:
-            run = False
-            pygame.display.quit()
-            pygame.quit()
-            sys.exit()
-            break
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT : playerXchange = 0-boxSide
-            if event.key == pygame.K_RIGHT : playerXchange = boxSide
-            if event.key == pygame.K_DOWN : tickdelay = tickdelay/2
-            if event.key == pygame.K_SPACE : piece.rotate()
-            if event.key == pygame.K_s : 
-                if switchCount > 0 : 
-                    Abilities_and_Aesthetics.switchPiece()
-                    switchCount -= 1
-            if event.key == pygame.K_ESCAPE : pauseSwitch = True
-            if event.key == pygame.K_g : 
-                if ghostCount > 0 :
-                    ghostSwitch = True
-                    ghostCount -= 1
-            if event.key == pygame.K_d : 
-                if slomoCount > 0 : 
-                    slomoSwitch = True
-                    slomoCount -= 1
-            if event.key == pygame.K_f : breaklinesSwitch = True
-    keys = pygame.key.get_pressed()
-    if keys[pygame.K_LEFT]: playerXchange = 0-boxSide
-    if keys[pygame.K_RIGHT]: playerXchange = boxSide
-    if keys[pygame.K_DOWN] : tickdelay = tickdelay/2
+    #Game Loop
+    while run:
 
-
-
-
-    #Check if colliding with walls of game or horizontal collision with other blocks
-    piece.collisionCheck()
-
-    if slomoSwitch:
-        if (slomoTime > 0) :
-            Abilities_and_Aesthetics.SloMo()
-            slomoTime -= tickdelay
-        else :
-            slomoSwitch = False
-            slomoTime = 20000
-
-    
-    if ghostSwitch : 
-        if (ghostTime > 0) :
-            Abilities_and_Aesthetics.ghostPiece()
-            ghostTime -= tickdelay
-        else : 
-            ghostSwitch = False
-            ghostTime = 20000
-
-
-    #Set New Coords
-    playerX += playerXchange
-    playerY += playerYchange
-
-
-
-
-    #Gameover
-    for x in range(len(mainArray[0])):
-        if mainArray[0][x] : 
-            gameover = True
-            run = False
-            break
-    if run == False : break
-
-
-
-    if breaklinesSwitch and breaklinesCount > 0 :
-        Abilities_and_Aesthetics.breakLines()
+        #DEFAULTS
+        tickdelay = Abilities_and_Aesthetics.getTick()
+        if tickdelay < 100 : tickdelay = 100
+        playerXchange = 0
+        playerYchange = boxSide
+        screen.fill(bgColor)
+        if playerState == "PLACED" :
+            piece = nextPiece
+            nextPiece = Pieces.pieceClass(piecesArray[random.randint(0, len(piecesArray)-1)])
+            playerX = gameX/2
+            playerY = 0
+            playerState = "FALLING"
+        screen.blit(gamebgimg, (0,0))
+        screen.blit(pygame.transform.scale(logoimg, (8*boxSide,8*boxSide*300/524)), (gameX+5*boxSide, 3*boxSide))
+        pauseSwitch = False
         breaklinesSwitch = False
-        breaklinesCount -= 1
 
-    #Draw piece and check vertical collisions to solidify
-    piece.drawer()
-    piece.checker()
+
+        #INPUTS
+        for event in pygame.event.get() :
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.display.quit()
+                pygame.quit()
+                sys.exit()
+                break
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_LEFT : playerXchange = 0-boxSide
+                if event.key == pygame.K_RIGHT : playerXchange = boxSide
+                if event.key == pygame.K_DOWN : tickdelay = tickdelay/2
+                if event.key == pygame.K_SPACE : piece.rotate()
+                if event.key == pygame.K_s : 
+                    if switchCount > 0 : 
+                        Abilities_and_Aesthetics.switchPiece()
+                        switchCount -= 1
+                if event.key == pygame.K_ESCAPE : pauseSwitch = True
+                if event.key == pygame.K_g : 
+                    if ghostCount > 0 :
+                        ghostSwitch = True
+                        abilityusesfx.play()
+                        ghostCount -= 1
+                if event.key == pygame.K_d : 
+                    if slomoCount > 0 : 
+                        slomoSwitch = True
+                        abilityusesfx.play()
+                        slomoCount -= 1
+                if event.key == pygame.K_f : breaklinesSwitch = True
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT]: playerXchange = 0-boxSide
+        if keys[pygame.K_RIGHT]: playerXchange = boxSide
+        if keys[pygame.K_DOWN] : tickdelay = tickdelay/2
+
+
+
+
+        #Check if colliding with walls of game or horizontal collision with other blocks
+        piece.collisionCheck()
+
+        if slomoSwitch:
+            if (slomoTime > 0) :
+                Abilities_and_Aesthetics.SloMo()
+                slomoTime -= tickdelay
+            else :
+                slomoSwitch = False
+                slomoTime = 20000
+
+    
+        if ghostSwitch : 
+            if (ghostTime > 0) :
+                Abilities_and_Aesthetics.ghostPiece()
+                ghostTime -= tickdelay
+            else : 
+                ghostSwitch = False
+                ghostTime = 20000
+
+
+        #Set New Coords
+        playerX += playerXchange
+        playerY += playerYchange
+
+
+
+
+        #Gameover
+        for x in range(len(mainArray[0])):
+            if mainArray[0][x] : 
+                gameover = True
+                run = False
+                pygame.mixer.music.stop()
+                gameoversfx.play()
+                break
+        if run == False : break
+
+
+
+        if breaklinesSwitch and breaklinesCount > 0 :
+            abilityusesfx.play()
+            Abilities_and_Aesthetics.breakLines()
+            breaklinesSwitch = False
+            breaklinesCount -= 1
+
+        #Draw piece and check vertical collisions to solidify
+        piece.drawer()
+        piece.checker()
 
 
     
-    #UPDATE
-    whatsNext()
-    scoreKeep()
-    Abilities_and_Aesthetics.hungryBar()
-    Abilities_and_Aesthetics.placeAndBreak()
+        #UPDATE
+        whatsNext()
+        scoreKeep()
+        Abilities_and_Aesthetics.hungryBar()
+        Abilities_and_Aesthetics.placeAndBreak()
     
-    if score >= lastRandomPieceScore + 2 and playerState == "PLACED" :
-        noOfBlocks = 8
-        indXList = [random.randint(0, len(mainArray[0])-1) for x in range(noOfBlocks)]
-        indYList = [0 for x in range(noOfBlocks)]
-        Abilities_and_Aesthetics.randomPieceDrop()
-        lastRandomPieceScore = score
+        if score >= lastRandomPieceScore + 2 and playerState == "PLACED" :
+            noOfBlocks = 8
+            indXList = [random.randint(0, len(mainArray[0])-1) for x in range(noOfBlocks)]
+            indYList = [0 for x in range(noOfBlocks)]
+            Abilities_and_Aesthetics.randomPieceDrop()
+            lastRandomPieceScore = score
 
 
     
-    if pauseSwitch : pauseMenu()
-    pygame.display.update()
-    pygame.time.wait(int(tickdelay))
+        if pauseSwitch :
+            pygame.mixer.music.pause()
+            pauseMenu()
+            pygame.mixer.music.unpause()
+        pygame.display.update()
+        pygame.time.wait(int(tickdelay))
 
 
-while gameover : 
-    gameOver()
-    for event in pygame.event.get() :
-        if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE) :
-           gameover = False
-           pygame.display.quit()
-           pygame.quit()
-           sys.exit()
+    while gameover : 
+        gameOver()
+        for event in pygame.event.get() :
+            if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE) :
+               gameover = False
+               pygame.display.quit()
+               pygame.quit()
+               sys.exit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN :
+               gameover = False
+               break

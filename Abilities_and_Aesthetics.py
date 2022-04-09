@@ -5,12 +5,13 @@ def placeAndBreak() :
     import TetrisPieces as TP
     import random
     spriteY = TP.boxSide - 23
-    spriteX = TP.gameX + TP.boxSide
+    spriteX = TP.gameX + TP.boxSide*1.5
     for arrY in range(len(TP.mainArray)) :
         for arrX in range(len(TP.mainArray[arrY])) :
             if TP.mainArray[arrY][arrX] : TP.screen.blit(random.choice(TP.colorArray),(arrX*TP.boxSide, (arrY+1)*TP.boxSide))
     for arrY in range(len(TP.mainArray)) :
         if TP.mainArray[arrY] == [True for x in range(int(TP.gameX/TP.boxSide))] :
+            if (arrY*TP.boxSide - spriteY > 5*TP.boxSide) : TP.footstepsfx.play()
             while spriteY < arrY*TP.boxSide :
                 TP.screen.blit(TP.sprite2img, (spriteX, spriteY))
                 TP.pygame.display.update()
@@ -24,6 +25,7 @@ def placeAndBreak() :
             if (TP.score > TP.lastAbilityScore and TP.score%6 == 0) : 
                 giveAbilities()
                 TP.lastAbilityScore = TP.score
+            TP.linebreaksfx.play()
             for x in range(len(TP.mainArray[0])) :
                 TP.screen.blit(TP.placedimg, (x*TP.boxSide, (arrY+1)*TP.boxSide))
                 if TP.playerState == "FALLING" : TP.piece.drawer()
@@ -34,6 +36,7 @@ def placeAndBreak() :
             TP.pygame.time.wait(40)
         else :
             TP.screen.blit(TP.sprite2img, (spriteX, spriteY))
+    if (spriteY - TP.boxSide - 23 > 5*TP.boxSide) : TP.footstepsrevsfx.play()
     while spriteY > TP.boxSide-23 :
         TP.screen.blit(TP.sprite2img, (spriteX, spriteY))
         TP.pygame.display.update()
@@ -53,7 +56,7 @@ def giveAbilities() :
     if res == "Fill" : TP.breaklinesCount += 1
     if res == "SlowMo" : TP.slomoCount += 1
     if res == "Ghost" : TP.ghostCount += 1
-
+    TP.abilityunlocksfx.play()
 
 def hungryBar() :
     import TetrisPieces as TP
@@ -80,6 +83,7 @@ def hungryBar() :
 # Switch with next piece
 def switchPiece() :
     import TetrisPieces as TP
+    TP.abilityusesfx.play()
     TP.piece, TP.nextPiece = TP.nextPiece, TP.piece
 
 
@@ -134,6 +138,7 @@ def randomPieceDrop() :
     import TetrisPieces as TP
     switch = True
     workXList = [x for x in range(0, len(TP.indXList))]
+    TP.randomBlockssfx.play()
     while switch :
         for playerNo in workXList :
             if TP.indYList[playerNo] >= len(TP.mainArray) - 1 or TP.mainArray[TP.indYList[playerNo]+1][TP.indXList[playerNo]] : 

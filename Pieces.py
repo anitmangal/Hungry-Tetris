@@ -199,6 +199,7 @@ class pieceClass:
         for x in range(len(self.pieceArray[0])) :
             for y in range(len(self.pieceArray)) :
                 if self.pieceArray[y][x] and ((TP.playerY + TP.boxSide*(len(self.pieceArray)) > TP.gameY) or TP.mainArray[int(TP.playerY/TP.boxSide) + y][int(TP.playerX/TP.boxSide) + x]) :
+                    TP.freezesfx.play()
                     self.solidify()
                     TP.playerState = "PLACED"
                     return
